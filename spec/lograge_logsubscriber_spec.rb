@@ -41,7 +41,8 @@ describe Lograge::RequestLogSubscriber do
       log_output.string.should include('/home')
     end
 
-    it "should start the log line with the HTTP method" do
+    it "should start the log line with the HTTP method if no custom_prefix is given" do
+      Lograge.custom_prefixes = lambda {|event| nil}
       subscriber.process_action(event)
       log_output.string.starts_with?('GET').should == true
     end
@@ -125,6 +126,30 @@ describe Lograge::RequestLogSubscriber do
       log_output.string.should be_present
     end
   end
+
+  describe "with custom_prefixes configured" do
+    it "should combine the hash properly for the output" do
+      Lograge.custom_prefixes = {:pid => "1337"}
+      subscriber.process_action(event)
+      log_output.string.should =~ /\[1337\] /
+    end
+    it "should combine the output of a lambda properly" do
+      Lograge.custom_prefixes = lambda {|event| {:hostname => "my_app_server"}}
+      subscriber.process_action(event)
+      log_output.string.should =~ /\[my_app_server\] /
+    end
+    it "should separate prefixes with a dash" do
+      Lograge.custom_prefixes = lambda {|event| {:pid => "1337", :hostname => "my_app_server"}}
+      subscriber.process_action(event)
+      log_output.string.should =~ /\[1337-my_app_server\] /
+    end
+    it "should work if the method returns nil" do
+      Lograge.custom_prefixes = lambda {|event| nil}
+      subscriber.process_action(event)
+      log_output.string.should be_present
+    end
+  end
+
 
   describe "when processing a redirect" do
     it "should store the location in a thread local variable" do

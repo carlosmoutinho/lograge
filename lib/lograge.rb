@@ -16,11 +16,22 @@ module Lograge
   mattr_writer :custom_options
   self.custom_options = nil
 
+  mattr_writer :custom_prefixes
+  self.custom_prefixes = nil
+
   def self.custom_options(event)
     if @@custom_options.respond_to?(:call)
       @@custom_options.call(event)
     else
       @@custom_options
+    end
+  end
+
+  def self.custom_prefixes(event)
+    if @@custom_prefixes.respond_to?(:call)
+      @@custom_prefixes.call(event)
+    else
+      @@custom_prefixes
     end
   end
 
@@ -52,6 +63,7 @@ module Lograge
     Lograge.remove_existing_log_subscriptions
     Lograge::RequestLogSubscriber.attach_to :action_controller
     Lograge.custom_options = app.config.lograge.custom_options
+    Lograge.custom_prefixes = app.config.lograge.custom_prefixes
   end
 end
 
